@@ -68,7 +68,7 @@ function voltarParaLista() {
 }
 
 /* ===========================
-   "CÂMERA" VIRTUAL – USA AS IMAGENS MOCKADAS
+   CÂMERA REAL + FOTO MOCKADA
    =========================== */
 
 // caminhos relativos às imagens dentro de www/img/
@@ -80,6 +80,34 @@ const IMAGENS_PIZZA = [
 
 // Função chamada pelo botão "Foto"
 function tirarFoto() {
+    if (!navigator.camera) {
+        alert('Camera plugin não disponível (navigator.camera undefined).');
+        return;
+    }
+
+    const options = {
+        quality: 70,
+        destinationType: Camera.DestinationType.DATA_URL,
+        encodingType: Camera.EncodingType.JPEG,
+        mediaType: Camera.MediaType.PICTURE,
+        sourceType: Camera.PictureSourceType.CAMERA,
+        targetWidth: 600,
+        targetHeight: 600,
+        correctOrientation: true
+    };
+
+    // ABRE A CÂMERA REAL
+    navigator.camera.getPicture(
+        onFotoCameraSucesso,
+        onFotoErro,
+        options
+    );
+}
+
+// callback chamado PELO PLUGIN (foto real foi tirada)
+function onFotoCameraSucesso(imageDataFromCamera) {
+    console.log('Foto real capturada, tamanho base64:', imageDataFromCamera.length);
+
     const escolha = prompt(
         "Escolha a foto da pizza:\n" +
         "1 - Queijo\n" +
@@ -88,7 +116,6 @@ function tirarFoto() {
     );
 
     let index = null;
-
     if (escolha === '1') index = 0;
     else if (escolha === '2') index = 1;
     else if (escolha === '3') index = 2;
@@ -100,15 +127,14 @@ function tirarFoto() {
 
     const caminho = IMAGENS_PIZZA[index].caminho;
 
-    // Carrega a imagem local e converte para base64,
-    // depois chama onFotoSucesso exatamente como a câmera faria
+    // carrega a imagem local, converte pra base64 e aplica como se fosse a foto
     carregarImagemComoBase64(caminho)
         .then((base64) => {
-            onFotoSucesso(base64);
+            const dataUrl = "url('data:image/png;base64," + base64 + "')";
+            imagemDiv.style.backgroundImage = dataUrl;
+            imagemDiv.textContent = '';
         })
-        .catch((err) => {
-            onFotoErro(err);
-        });
+        .catch(onFotoErro);
 }
 
 // helper: carrega img/www e converte para base64 (retorna Promise)
@@ -137,16 +163,8 @@ function carregarImagemComoBase64(caminhoRelativo) {
     });
 }
 
-// MESMOS callbacks de quando se usa navigator.camera.getPicture
-function onFotoSucesso(imageData) {
-    // imageData aqui já é base64, igual a camera com destinationType = DATA_URL
-    const dataUrl = "url('data:image/png;base64," + imageData + "')";
-    imagemDiv.style.backgroundImage = dataUrl;
-    imagemDiv.textContent = '';
-}
-
 function onFotoErro(message) {
-    alert('Erro ao obter foto (virtual): ' + message);
+    alert('Erro ao tirar foto: ' + message);
 }
 
 /* ===========================
