@@ -1,6 +1,6 @@
 // js/index.js
 
-// TROCAR PELO ID DA SUA PIZZARIA
+// ID DA SUA PIZZARIA NO BACKEND
 const PIZZARIA_ID = 'pizzaria_queijo_maravilha';
 
 let applista, appcadastro, listaPizzasDiv;
@@ -175,6 +175,7 @@ function carregarPizzas() {
     listaPizzasDiv.innerHTML = 'Carregando...';
 
     const url = 'https://backend-s0hl.onrender.com/admin/pizzas/' + PIZZARIA_ID;
+    console.log('GET pizzas =>', url);
 
     cordova.plugin.http.get(
         url,
@@ -195,8 +196,16 @@ function carregarPizzas() {
         },
         function (error) {
             console.log('Erro ao carregar pizzas', error);
-            alert('Erro ao carregar pizzas.');
-            listaPizzasDiv.innerHTML = '';
+
+            let msg = 'Erro ao carregar pizzas.\n';
+            if (error.status !== undefined) msg += 'Status: ' + error.status + '\n';
+            if (error.error)              msg += 'Error: '  + error.error   + '\n';
+            if (error.exception)          msg += 'Ex: '     + error.exception + '\n';
+
+            alert(msg);
+
+            listaPizzasDiv.innerHTML =
+                '<div class="linha">Não foi possível carregar as pizzas.</div>';
         }
     );
 }
@@ -205,14 +214,17 @@ function montarListaPizzas() {
     listaPizzasDiv.innerHTML = '';
 
     if (!listaPizzasCadastradas.length) {
-        listaPizzasDiv.innerHTML = '<div class="linha">Nenhuma pizza cadastrada.</div>';
+        listaPizzasDiv.innerHTML =
+            '<div class="linha">Nenhuma pizza cadastrada.</div>';
         return;
     }
 
     listaPizzasCadastradas.forEach((item, idx) => {
         const novo = document.createElement('div');
         novo.classList.add('linha');
-        const precoFormatado = item.preco ? ` — R$ ${Number(item.preco).toFixed(2)}` : '';
+        const precoFormatado = item.preco
+            ? ` — R$ ${Number(item.preco).toFixed(2)}`
+            : '';
         novo.innerHTML = item.pizza + precoFormatado;
         novo.id = idx;
         novo.onclick = function () {
@@ -274,6 +286,7 @@ function salvarPizza() {
 
 function criarPizza(payload) {
     const url = 'https://backend-s0hl.onrender.com/admin/pizza/';
+    console.log('POST pizza =>', url, payload);
 
     cordova.plugin.http.post(
         url,
@@ -293,6 +306,7 @@ function criarPizza(payload) {
 
 function atualizarPizza(payload) {
     const url = 'https://backend-s0hl.onrender.com/admin/pizza/';
+    console.log('PUT pizza =>', url, payload);
 
     cordova.plugin.http.put(
         url,
@@ -323,8 +337,11 @@ function excluirPizza() {
         return;
     }
 
-    const url = 'https://backend-s0hl.onrender.com/admin/pizza/' +
+    const url =
+        'https://backend-s0hl.onrender.com/admin/pizza/' +
         PIZZARIA_ID + '/' + encodeURIComponent(nomePizza);
+
+    console.log('DELETE pizza =>', url);
 
     cordova.plugin.http.delete(
         url,
