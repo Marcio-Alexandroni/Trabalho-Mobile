@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Pizzaria Admin</title>
+
+    <!-- CSP pedida no enunciado -->
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self' data: https://ssl.gstatic.com 'unsafe-eval';
+                   style-src 'self' 'unsafe-inline';
+                   media-src *;
+                   img-src * data: content:;">
+
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover" />
+
+    <link rel="stylesheet" href="css/index.css">
+</head>
+<body>
+
+    <!-- LISTA DE PIZZAS -->
+    <div class="app-lista" id="applista">
+        <div class="topbar">
+            <div>
+                <div class="topbar-title">Pizzas da Casa</div>
+                <div class="topbar-subtitle">Administração da Pizzaria</div>
+            </div>
+        </div>
+
+        <div class="superior" id="listaPizzas">
+            <!-- Linhas de pizza serão inseridas via JS -->
+        </div>
+
+        <div class="inferior">
+            <button class="botao-novo" id="btnNovo">+ Nova pizza</button>
+        </div>
+    </div>
+
+    <!-- CADASTRO DE PIZZA -->
+    <div class="app-cadastro" id="appcadastro">
+        <div class="topbar">
+            <button class="btn-voltar" id="btnVoltarLista">←</button>
+            <div class="topbar-title">Cadastro de Pizza</div>
+        </div>
+
+        <div class="imagem" id="imagem">
+            Toque em “Foto” para adicionar a imagem da pizza
+        </div>
+
+        <div class="form">
+            <div class="form-linha">
+                <div class="form-linha-esq">
+                    <label for="pizza">Pizza:</label>
+                </div>
+                <div class="form-linha-dir">
+                    <input type="text" id="pizza" placeholder="Nome da pizza">
+                </div>
+            </div>
+
+            <div class="form-linha">
+                <div class="form-linha-esq">
+                    <label for="preco">Preço:</label>
+                </div>
+                <div class="form-linha-dir">
+                    <input type="number" id="preco" step="0.01" placeholder="Ex: 49.90">
+                </div>
+            </div>
+        </div>
+
+        <div class="botoes">
+            <button class="botao" id="btnFoto">Foto</button>
+            <button class="botao botao-primario" id="btnSalvar">Salvar</button>
+            <button class="botao botao-perigo" id="btnExcluir">Excluir</button>
+            <button class="botao botao-secundario" id="btnCancelar">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Cordova -->
+    <script src="cordova.js"></script>
+    <script src="js/index.js"></script>
+</body>
+</html>
