@@ -1,22 +1,40 @@
-// js/index.js
+// =============================
+// CONFIG
+// =============================
 
-// ID DA SUA PIZZARIA NO BACKEND
+// ID da pizzaria usada pelo backend
 const PIZZARIA_ID = 'pizzaria_queijo_maravilha';
+// Host do backend
+const BASE_URL = 'https://backend-s0hl.onrender.com';
+
+// =============================
+// VARIÁVEIS GLOBAIS
+// =============================
 
 let applista, appcadastro, listaPizzasDiv;
 let imagemDiv, pizzaInput, precoInput;
 
 let listaPizzasCadastradas = [];
 let pizzaSelecionadaIndex = null;
-let pizzaSelecionadaId = null; // _id da pizza no backend
+let pizzaSelecionadaId = null; // _id vindo do backend
+
+// se você ainda usar a parte de mensagem:
+let mensagem = null;
+let msgInformada = null;
+
+// =============================
+// DEVICEREADY
+// =============================
 
 document.addEventListener('deviceready', onDeviceReady, false);
 
 function onDeviceReady() {
-    // Importante para o cordova-plugin-advanced-http
+    console.log('deviceready disparado');
+
+    // IMPORTANTE para o cordova-plugin-advanced-http
     cordova.plugin.http.setDataSerializer('json');
 
-    // Referências de elementos
+    // Referências de elementos da tela de pizzas
     applista       = document.getElementById('applista');
     appcadastro    = document.getElementById('appcadastro');
     listaPizzasDiv = document.getElementById('listaPizzas');
@@ -25,7 +43,7 @@ function onDeviceReady() {
     pizzaInput     = document.getElementById('pizza');
     precoInput     = document.getElementById('preco');
 
-    // Eventos
+    // Botões / eventos da tela de pizzas
     document.getElementById('btnNovo').onclick        = abrirCadastroNovo;
     document.getElementById('btnVoltarLista').onclick = voltarParaLista;
     document.getElementById('btnCancelar').onclick    = voltarParaLista;
@@ -33,13 +51,31 @@ function onDeviceReady() {
     document.getElementById('btnSalvar').onclick      = salvarPizza;
     document.getElementById('btnExcluir').onclick     = excluirPizza;
 
-    // Carregar lista ao iniciar
+    // Se ainda estiver usando a atividade de "mensagem":
+    const btnMsg = document.getElementById('exibeMensagem');
+    if (btnMsg) {
+        mensagem    = document.getElementById('mensagem');
+        msgInformada = document.getElementById('msgInformada');
+        btnMsg.addEventListener('click', exibirMensagem);
+    }
+
+    // Carrega lista do backend
     carregarPizzas();
 }
 
-/* ===========================
-   CONTROLE DE TELAS
-   =========================== */
+// =============================
+// MENSAGEM (se precisar)
+// =============================
+
+function exibirMensagem() {
+    if (mensagem && msgInformada) {
+        mensagem.innerHTML = msgInformada.value;
+    }
+}
+
+// =============================
+// CONTROLE DE TELAS
+// =============================
 
 function mostrarLista() {
     applista.style.display    = 'flex';
@@ -67,121 +103,51 @@ function voltarParaLista() {
     mostrarLista();
 }
 
-/* ===========================
-   CÂMERA REAL + FOTO MOCKADA
-   =========================== */
+// =============================
+// "CÂMERA" – ESCOLHENDO IMAGEM MOCK
+// =============================
 
-// caminhos relativos às imagens dentro de www/img/
-const IMAGENS_PIZZA = [
-    { nome: 'Queijo',    caminho: 'img/pizza_mussarela.png' },   // padrão
-    { nome: 'Calabresa', caminho: 'img/pizza_calabresa.png' },
-    { nome: 'Pepperoni', caminho: 'img/pizza_pepperoni.png' }
-];
-
-// Função chamada pelo botão "Foto"
 function tirarFoto() {
-    if (!navigator.camera) {
-        alert('Camera plugin não disponível (navigator.camera undefined).');
-        return;
-    }
-
-    const options = {
-        quality: 70,
-        destinationType: Camera.DestinationType.DATA_URL,
-        encodingType: Camera.EncodingType.JPEG,
-        mediaType: Camera.MediaType.PICTURE,
-        sourceType: Camera.PictureSourceType.CAMERA,
-        targetWidth: 600,
-        targetHeight: 600,
-        correctOrientation: true
-    };
-
-    // ABRE A CÂMERA REAL
-    navigator.camera.getPicture(
-        onFotoCameraSucesso,
-        onFotoErro,
-        options
-    );
-}
-
-// callback chamado PELO PLUGIN (foto real foi tirada)
-function onFotoCameraSucesso(imageDataFromCamera) {
-    console.log('Foto real capturada, tamanho base64:', imageDataFromCamera.length);
-
-    const escolha = prompt(
-        "Escolha a foto da pizza:\n" +
-        "1 - Queijo\n" +
-        "2 - Calabresa\n" +
+    const opcao = prompt(
+        "Escolha a foto:\n" +
+        "1 - Calabresa\n" +
+        "2 - Mussarela\n" +
         "3 - Pepperoni"
     );
 
-    let index = null;
-    if (escolha === '1') index = 0;
-    else if (escolha === '2') index = 1;
-    else if (escolha === '3') index = 2;
+    let caminho;
 
-    if (index === null) {
+    if (opcao === '1') {
+        caminho = 'img/pizza_calabresa.png';
+    } else if (opcao === '2') {
+        caminho = 'img/pizza_mussarela.png';
+    } else if (opcao === '3') {
+        caminho = 'img/pizza_pepperoni.png';
+    } else {
         alert('Opção inválida.');
         return;
     }
 
-    const caminho = IMAGENS_PIZZA[index].caminho;
-
-    // carrega a imagem local, converte pra base64 e aplica como se fosse a foto
-    carregarImagemComoBase64(caminho)
-        .then((base64) => {
-            const dataUrl = "url('data:image/png;base64," + base64 + "')";
-            imagemDiv.style.backgroundImage = dataUrl;
-            imagemDiv.textContent = '';
-        })
-        .catch(onFotoErro);
+    imagemDiv.style.backgroundImage = `url('${caminho}')`;
+    imagemDiv.textContent = '';
 }
 
-// helper: carrega img/www e converte para base64 (retorna Promise)
-function carregarImagemComoBase64(caminhoRelativo) {
-    return new Promise((resolve, reject) => {
-        fetch(caminhoRelativo)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Falha ao carregar imagem: ' + response.status);
-                }
-                return response.blob();
-            })
-            .then(blob => {
-                const reader = new FileReader();
-                reader.onloadend = function () {
-                    const dataUrl = reader.result; // "data:image/png;base64,AAAA..."
-                    const base64 = dataUrl.split(',')[1]; // só a parte base64
-                    resolve(base64);
-                };
-                reader.onerror = function (e) {
-                    reject('Erro ao ler imagem: ' + e);
-                };
-                reader.readAsDataURL(blob);
-            })
-            .catch(err => reject(err));
-    });
-}
-
-function onFotoErro(message) {
-    alert('Erro ao tirar foto: ' + message);
-}
-
-/* ===========================
-   LISTA DE PIZZAS
-   =========================== */
+// =============================
+// LISTA DE PIZZAS (GET)
+// =============================
 
 function carregarPizzas() {
     listaPizzasDiv.innerHTML = 'Carregando...';
 
-    const url = 'https://backend-s0hl.onrender.com/admin/pizzas/' + PIZZARIA_ID;
-    console.log('GET pizzas =>', url);
+    const url = `${BASE_URL}/admin/pizzas/${PIZZARIA_ID}`;
+    console.log('GET', url);
 
     cordova.plugin.http.get(
         url,
         {},
         {},
         function (response) {
+            console.log('GET OK', response.status, response.data);
             try {
                 if (response.data && response.data !== "") {
                     listaPizzasCadastradas = JSON.parse(response.data);
@@ -195,15 +161,12 @@ function carregarPizzas() {
             montarListaPizzas();
         },
         function (error) {
-            console.log('Erro ao carregar pizzas', error);
-
+            console.log('Erro ao carregar pizzas', JSON.stringify(error));
             let msg = 'Erro ao carregar pizzas.\n';
-            if (error.status !== undefined) msg += 'Status: ' + error.status + '\n';
-            if (error.error)              msg += 'Error: '  + error.error   + '\n';
-            if (error.exception)          msg += 'Ex: '     + error.exception + '\n';
-
+            if (error.status)    msg += 'Status: ' + error.status + '\n';
+            if (error.error)     msg += 'Erro: ' + error.error + '\n';
+            if (error.exception) msg += 'Ex: ' + error.exception + '\n';
             alert(msg);
-
             listaPizzasDiv.innerHTML =
                 '<div class="linha">Não foi possível carregar as pizzas.</div>';
         }
@@ -214,17 +177,14 @@ function montarListaPizzas() {
     listaPizzasDiv.innerHTML = '';
 
     if (!listaPizzasCadastradas.length) {
-        listaPizzasDiv.innerHTML =
-            '<div class="linha">Nenhuma pizza cadastrada.</div>';
+        listaPizzasDiv.innerHTML = '<div class="linha">Nenhuma pizza cadastrada.</div>';
         return;
     }
 
     listaPizzasCadastradas.forEach((item, idx) => {
         const novo = document.createElement('div');
         novo.classList.add('linha');
-        const precoFormatado = item.preco
-            ? ` — R$ ${Number(item.preco).toFixed(2)}`
-            : '';
+        const precoFormatado = item.preco ? ` — R$ ${Number(item.preco).toFixed(2)}` : '';
         novo.innerHTML = item.pizza + precoFormatado;
         novo.id = idx;
         novo.onclick = function () {
@@ -234,16 +194,16 @@ function montarListaPizzas() {
     });
 }
 
-/* ===========================
-   CADASTRO / EDIÇÃO
-   =========================== */
+// =============================
+// CADASTRO / EDIÇÃO
+// =============================
 
 function carregarDadosPizza(id) {
     const idx = Number(id);
     const pizza = listaPizzasCadastradas[idx];
 
     pizzaSelecionadaIndex = idx;
-    pizzaSelecionadaId    = pizza._id; // campo do backend
+    pizzaSelecionadaId    = pizza._id;
 
     pizzaInput.value = pizza.pizza || '';
     precoInput.value = pizza.preco || '';
@@ -264,7 +224,7 @@ function montarPayloadPizza() {
         pizzaria: PIZZARIA_ID,
         pizza: pizzaInput.value,
         preco: precoInput.value,
-        imagem: imagemDiv.style.backgroundImage // segue o enunciado
+        imagem: imagemDiv.style.backgroundImage
     };
 }
 
@@ -284,45 +244,67 @@ function salvarPizza() {
     }
 }
 
+// =============================
+// POST (CRIAR)
+// =============================
+
 function criarPizza(payload) {
-    const url = 'https://backend-s0hl.onrender.com/admin/pizza/';
-    console.log('POST pizza =>', url, payload);
+    const url = `${BASE_URL}/admin/pizza/`;
+    console.log('POST', url, payload);
 
     cordova.plugin.http.post(
         url,
         payload,
-        {},
+        { 'Content-Type': 'application/json' },
         function (response) {
+            console.log('POST OK', response.status, response.data);
             alert('Pizza cadastrada com sucesso!');
             mostrarLista();
             carregarPizzas();
         },
         function (error) {
-            console.log('Erro ao salvar pizza', error);
-            alert('Erro ao salvar pizza.');
+            console.log('Erro ao salvar pizza', JSON.stringify(error));
+            let msg = 'Erro ao salvar pizza.\n';
+            if (error.status)    msg += 'Status: ' + error.status + '\n';
+            if (error.error)     msg += 'Erro: '   + error.error + '\n';
+            if (error.exception) msg += 'Ex: '     + error.exception + '\n';
+            alert(msg);
         }
     );
 }
 
+// =============================
+// PUT (ATUALIZAR)
+// =============================
+
 function atualizarPizza(payload) {
-    const url = 'https://backend-s0hl.onrender.com/admin/pizza/';
-    console.log('PUT pizza =>', url, payload);
+    const url = `${BASE_URL}/admin/pizza/`;
+    console.log('PUT', url, payload);
 
     cordova.plugin.http.put(
         url,
         payload,
-        {},
+        { 'Content-Type': 'application/json' },
         function (response) {
+            console.log('PUT OK', response.status, response.data);
             alert('Pizza atualizada com sucesso!');
             mostrarLista();
             carregarPizzas();
         },
         function (error) {
-            console.log('Erro ao atualizar pizza', error);
-            alert('Erro ao atualizar pizza.');
+            console.log('Erro ao atualizar pizza', JSON.stringify(error));
+            let msg = 'Erro ao atualizar pizza.\n';
+            if (error.status)    msg += 'Status: ' + error.status + '\n';
+            if (error.error)     msg += 'Erro: '   + error.error + '\n';
+            if (error.exception) msg += 'Ex: '     + error.exception + '\n';
+            alert(msg);
         }
     );
 }
+
+// =============================
+// DELETE
+// =============================
 
 function excluirPizza() {
     if (pizzaSelecionadaIndex === null || pizzaSelecionadaIndex === undefined) {
@@ -337,24 +319,26 @@ function excluirPizza() {
         return;
     }
 
-    const url =
-        'https://backend-s0hl.onrender.com/admin/pizza/' +
-        PIZZARIA_ID + '/' + encodeURIComponent(nomePizza);
-
-    console.log('DELETE pizza =>', url);
+    const url = `${BASE_URL}/admin/pizza/${PIZZARIA_ID}/${encodeURIComponent(nomePizza)}`;
+    console.log('DELETE', url);
 
     cordova.plugin.http.delete(
         url,
         {},
         {},
         function (response) {
+            console.log('DELETE OK', response.status, response.data);
             alert('Pizza excluída com sucesso!');
             mostrarLista();
             carregarPizzas();
         },
         function (error) {
-            console.log('Erro ao excluir pizza', error);
-            alert('Erro ao excluir pizza.');
+            console.log('Erro ao excluir pizza', JSON.stringify(error));
+            let msg = 'Erro ao excluir pizza.\n';
+            if (error.status)    msg += 'Status: ' + error.status + '\n';
+            if (error.error)     msg += 'Erro: '   + error.error + '\n';
+            if (error.exception) msg += 'Ex: '     + error.exception + '\n';
+            alert(msg);
         }
     );
 }
